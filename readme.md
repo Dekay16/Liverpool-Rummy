@@ -1,0 +1,1 @@
+To start go to file path in command line /liverpool rummy and run "node server.js"

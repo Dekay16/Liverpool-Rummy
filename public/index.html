@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Liverpool Rummy</title>
+    <style>
+        body {
+            background: #2c2f33;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        #game {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #36393f;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .card { 
+            display: inline-block; 
+            padding: 12px 16px; 
+            margin: 6px; 
+            border: 1px solid #7289da; 
+            border-radius: 4px; 
+            background: #ffffff; 
+            font-weight: 600; 
+            font-size: 16px; 
+            width: 60px; 
+            text-align: center; 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+            cursor: move; 
+            user-select: none;
+            position: relative;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: scale(1.05); }
+        .card.red { color: #ff5555; }
+        .card.black { color: #2c2f33; }
+        .card.joker { color: #7289da; }
+        .card input[type="checkbox"] {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+        }
+        .card.dragging { opacity: 0.7; }
+        .player { margin: 12px 0; font-size: 18px; }
+        .disabled { opacity: 0.5; pointer-events: none; }
+        button { 
+            padding: 10px 20px; 
+            margin: 6px; 
+            background: #7289da; 
+            color: #ffffff; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background 0.2s;
+        }
+        button:hover:not(.disabled) { background: #677bc4; }
+        #hand { 
+            min-height: 80px; 
+            border: 2px dashed #7289da; 
+            padding: 12px; 
+            background: #40444b; 
+            border-radius: 4px; 
+        }
+        .player-melds { 
+            border: 2px solid #43b581; 
+            padding: 12px; 
+            margin: 12px 0; 
+            background: #40444b; 
+            border-radius: 4px; 
+        }
+        #leaderboard { 
+            margin-top: 20px; 
+            padding: 12px; 
+            background: #2f3136; 
+            border-radius: 4px; 
+        }
+        #instructions {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #2f3136;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+            display: none;
+        }
+        #instructions.show { display: block; }
+        #toggleInstructions {
+            background: #f1c40f;
+            color: #2c2f33;
+            margin-bottom: 12px;
+        }
+        select {
+            padding: 8px;
+            margin: 6px;
+            border-radius: 4px;
+            font-size: 14px;
+            background: #40444b;
+            color: #ffffff;
+            border: 1px solid #7289da;
+        }
+        h2, h3 { color: #f1c40f; }
+        input[type="text"] {
+            padding: 8px;
+            margin: 6px;
+            border-radius: 4px;
+            border: 1px solid #7289da;
+            background: #40444b;
+            color: #ffffff;
+        }
+        #discard {
+            font-size: 24px;
+            font-weight: bold;
+            background: #7289da;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        #turnStatus.your-turn {
+            font-size: 20px;
+            color: #f1c40f;
+            background: #40444b;
+            padding: 8px;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <button id="toggleInstructions" onclick="toggleInstructions()">Show Instructions</button>
+        <div id="instructions">
+            <h2>How to Play Liverpool Rummy</h2>
+            <p>Welcome to Liverpool Rummy! The goal is to have the lowest score after 7 rounds by getting rid of all your cards.</p>
+            <h3>Starting the Game</h3>
+            <ul>
+                <li>Enter a Game ID, your Name, and pick a starting round (defaults to 1), then click "Join Game". Share the Game ID with friends to play together.</li>
+                <li>Game starts with 2+ players. Each gets 10 cards, and one card is in the discard pile.</li>
+            </ul>
+            <h3>Gameplay</h3>
+            <p>Each round has a goal (e.g., "2 Sets"). Check "Round" for the current goal.</p>
+            <ul>
+                <li><strong>Turn Actions:</strong>
+                    <ul>
+                        <li><em>First Step:</em> Click "Pass Discard" (others can buy) or "Take Discard" (take it yourself).</li>
+                        <li><em>Draw:</em> After choosing, click "Draw from Deck" if you passed.</li>
+                        <li><em>Buy Discard:</em> When offered, click "Buy Discard" (costs 2 cards).</li>
+                    </ul>
+                </li>
+                <li><strong>Going Down:</strong>
+                    <ul>
+                        <li>Select cards with checkboxes, click "Go Down". Sets (3+ same rank) and runs (4+ sequential, same suit) are auto-detected.</li>
+                        <li>Must match the round’s exact goal (e.g., 2 sets).</li>
+                    </ul>
+                </li>
+                <li><strong>Laying Off:</strong> (After Going Down)
+                    <ul>
+                        <li>Select cards, choose player and meld, click "Layoff".</li>
+                    </ul>
+                </li>
+                <li><strong>Discard:</strong> Select one card, click "Discard Selected" to end turn.</li>
+                <li><strong>Going Out:</strong> After going down, discard last card to end round.</li>
+            </ul>
+            <h3>Winning</h3>
+            <ul>
+                <li>First to go out ends the round. Others score hand cards (Jokers=20, Aces=15, Face=10, Others=5).</li>
+                <li>Lowest score after 7 rounds wins!</li>
+            </ul>
+        </div>
+
+        <input id="gameId" placeholder="Game ID">
+        <input id="playerName" placeholder="Your Name">
+        <select id="startingRound">
+            <option value="0">Round 1 (2 Sets)</option>
+            <option value="1">Round 2 (1 Set, 1 Run)</option>
+            <option value="2">Round 3 (2 Runs)</option>
+            <option value="3">Round 4 (3 Sets)</option>
+            <option value="4">Round 5 (2 Sets, 1 Run)</option>
+            <option value="5">Round 6 (1 Set, 2 Runs)</option>
+            <option value="6">Round 7 (3 Runs)</option>
+        </select>
+        <button onclick="joinGame()">Join Game</button>
+        
+        <div id="players"></div>
+        <div id="round">Round: <span id="currentRound"></span> | Turn: <span id="turnCount"></span> | Goal: <span id="roundGoal"></span></div>
+        <div id="discard">Discard: <span id="discardPile"></span></div>
+        <div id="hand">Your hand: </div>
+        
+        <button id="passButton" onclick="passDiscard()">Pass Discard</button>
+        <button id="drawDiscardButton" onclick="drawDiscard()">Take Discard</button>
+        <button id="drawDeckButton" onclick="drawCard()">Draw from Deck</button>
+        <button id="discardButton" onclick="discardSelected()">Discard Selected</button>
+        <button id="buyButton" onclick="buyDiscard()">Buy Discard</button>
+        <button id="goOutButton" onclick="goOut()">Go Down</button>
+        <button id="layoffButton" onclick="layoff()">Layoff</button>
+        <div id="turnStatus"></div>
+        <div id="buyStatus"></div>
+        <div id="playerMelds"></div>
+        <div id="leaderboard"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let gameId, playerId;
+        let currentHand = [];
+        let currentRoundConditions = { sets: 0, runs: 0 };
+
+        function toggleInstructions() {
+            const instructions = document.getElementById('instructions');
+            instructions.classList.toggle('show');
+            document.getElementById('toggleInstructions').textContent = 
+                instructions.classList.contains('show') ? 'Hide Instructions' : 'Show Instructions';
+        }
+
+        function joinGame() {
+            gameId = document.getElementById('gameId').value;
+            const name = document.getElementById('playerName').value;
+            const startingRound = parseInt(document.getElementById('startingRound').value);
+            socket.emit('joinGame', gameId, name, startingRound);
+        }
+
+        function drawCard() {
+            socket.emit('drawCard', gameId);
+        }
+
+        function drawDiscard() {
+            socket.emit('drawDiscard', gameId);
+        }
+
+        function discardSelected() {
+            const selectedIndices = getSelectedCardIndices();
+            if (selectedIndices.length === 1) {
+                socket.emit('discard', gameId, selectedIndices);
+                clearSelections();
+            } else {
+                alert('Please select exactly one card to discard.');
+            }
+        }
+
+        function passDiscard() {
+            socket.emit('passDiscard', gameId);
+        }
+
+        function buyDiscard() {
+            socket.emit('buyDiscard', gameId);
+        }
+
+        function goOut() {
+            const selectedIndices = getSelectedCardIndices();
+            const selectedCards = selectedIndices.map(i => currentHand[i]);
+
+            if (selectedCards.length < (currentRoundConditions.sets * 3 + currentRoundConditions.runs * 4)) {
+                alert(`Select at least ${currentRoundConditions.sets * 3 + currentRoundConditions.runs * 4} cards to go down (sets need 3+, runs need 4+).`);
+                return;
+            }
+
+            const sets = [];
+            const runs = [];
+            let availableCards = [...selectedCards];
+
+            // Extract sets
+            const rankMap = new Map();
+            availableCards.forEach(card => {
+                const rank = card.includes('JOKER') ? 'JOKER' : card.slice(0, -1);
+                rankMap.set(rank, (rankMap.get(rank) || []).concat(card));
+            });
+
+            const jokerCards = rankMap.get('JOKER') || [];
+            rankMap.delete('JOKER');
+
+            rankMap.forEach((cards, rank) => {
+                while (cards.length >= 3 && sets.length < currentRoundConditions.sets) {
+                    const setCards = cards.splice(0, 3);
+                    if (validateSet(setCards)) {
+                        sets.push(setCards);
+                        availableCards = availableCards.filter(card => !setCards.includes(card));
+                    }
+                }
+            });
+
+            // Use jokers to complete sets if needed
+            if (jokerCards.length > 0 && sets.length < currentRoundConditions.sets) {
+                rankMap.forEach((cards, rank) => {
+                    if (cards.length > 0 && cards.length + jokerCards.length >= 3 && sets.length < currentRoundConditions.sets) {
+                        const setCards = [...cards];
+                        const jokersNeeded = 3 - setCards.length;
+                        const jokers = jokerCards.splice(0, jokersNeeded);
+                        setCards.push(...jokers);
+                        if (validateSet(setCards)) {
+                            sets.push(setCards);
+                            availableCards = availableCards.filter(card => !setCards.includes(card));
+                        }
+                    }
+                });
+            }
+
+            // Extract runs
+            if (availableCards.length >= 4 && runs.length < currentRoundConditions.runs) {
+                const cardsBySuit = {};
+                availableCards.forEach(card => {
+                    const suit = card.includes('JOKER') ? 'JOKER' : card.slice(-1);
+                    if (!cardsBySuit[suit]) cardsBySuit[suit] = [];
+                    cardsBySuit[suit].push(card);
+                });
+
+                for (let suit in cardsBySuit) {
+                    if (suit === 'JOKER' || runs.length >= currentRoundConditions.runs) continue;
+
+                    const sortedCards = cardsBySuit[suit]
+                        .map(card => ({
+                            rank: card.includes('JOKER') ? 'JOKER' : card.slice(0, -1),
+                            suit,
+                            card
+                        }))
+                        .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+
+                    let currentRun = [];
+                    let jokerCount = jokerCards.length;
+
+                    for (let i = 0; i < sortedCards.length; i++) {
+                        const card = sortedCards[i];
+
+                        if (currentRun.length === 0) {
+                            currentRun.push(card);
+                        } else {
+                            const lastCard = currentRun[currentRun.length - 1];
+                            const lastIndex = rankOrder.indexOf(lastCard.rank);
+                            let currentIndex = card.rank === 'JOKER' ? -1 : rankOrder.indexOf(card.rank);
+
+                            if (card.rank === 'JOKER') {
+                                currentRun.push(card);
+                                jokerCount--;
+                            } else {
+                                const gap = currentIndex - lastIndex - 1;
+                                if (gap === 0) {
+                                    currentRun.push(card);
+                                } else if (gap > 0 && gap <= jokerCount) {
+                                    for (let j = 0; j < gap; j++) {
+                                        const joker = jokerCards.shift();
+                                        currentRun.push({ rank: rankOrder[lastIndex + 1 + j], suit, card: joker });
+                                    }
+                                    currentRun.push(card);
+                                    jokerCount -= gap;
+                                } else {
+                                    if (currentRun.length >= 4) {
+                                        runs.push(currentRun.map(c => c.card));
+                                        availableCards = availableCards.filter(c => !currentRun.map(r => r.card).includes(c));
+                                        if (runs.length >= currentRoundConditions.runs) break;
+                                    }
+                                    currentRun = [card];
+                                }
+                            }
+                        }
+
+                        if (i === sortedCards.length - 1 && currentRun.length >= 4) {
+                            runs.push(currentRun.map(c => c.card));
+                            availableCards = availableCards.filter(c => !currentRun.map(r => r.card).includes(c));
+                        }
+                    }
+                    if (runs.length >= currentRoundConditions.runs) break;
+                }
+            }
+
+            if (sets.length === currentRoundConditions.sets && runs.length === currentRoundConditions.runs) {
+                socket.emit('goOut', gameId, { sets, runs });
+                clearSelections();
+            } else {
+                alert(`You need exactly ${currentRoundConditions.sets} sets and ${currentRoundConditions.runs} runs. Found ${sets.length} sets and ${runs.length} runs.`);
+            }
+        }
+
+        function layoff() {
+            const selectedIndices = getSelectedCardIndices();
+            if (selectedIndices.length === 0) {
+                alert('Please select cards to lay off.');
+                return;
+            }
+            const targetPlayerId = document.getElementById('layoffPlayer').value;
+            const meldIndex = parseInt(document.getElementById('layoffMeld').value);
+            console.log(targetPlayerId);
+            console.log(meldIndex);
+            if (Number.isNaN(targetPlayerId) || Number.isNaN(meldIndex)) {
+                alert('Please select a player and meld to add cards to.')
+                return;
+            }
+            const cards = selectedIndices.map(i => currentHand[i]);
+            socket.emit('layoff', gameId, { targetPlayerId, meldIndex, cards });
+            clearSelections();
+        }
+
+        function getSelectedCardIndices() {
+            const checkboxes = document.querySelectorAll('#hand .card input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+        }
+
+        function clearSelections() {
+            document.querySelectorAll('.card input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+
+        socket.on('gameUpdate', (state) => {
+            playerId = socket.id;
+            currentHand = state.yourHand;
+            currentRoundConditions = state.roundConditions;
+            updateUI(state);
+        });
+
+        socket.on('gameStart', (data) => {
+            console.log('Game started!', data);
+        });
+
+        socket.on('buyOpportunity', (data) => {
+            document.getElementById('buyStatus').textContent = 
+                `Discard available: ${data.discard}. Buy it? (5 seconds remaining)`;
+        });
+
+        socket.on('buySuccess', (data) => {
+            document.getElementById('buyStatus').textContent = 
+                `You bought ${data.discard} and drew ${data.extraCard}!`;
+        });
+
+        socket.on('buyResult', (data) => {
+            document.getElementById('buyStatus').textContent = 
+                `${data.buyer} bought ${data.discard}!`;
+        });
+
+        socket.on('roundEnd', (data) => {
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = 'Leaderboard:<br>' + 
+                Object.entries(data.scores).map(([id, { name, score }]) => `${name}: ${score}`).join('<br>');
+        });
+
+        socket.on('gameOver', (data) => {
+            alert(`Game Over! Winner: ${data.winner}`);
+            console.log('Scores:', data.scores);
+        });
+
+        socket.on('error', (msg) => {
+            alert(msg);
+        });
+
+        socket.on('goOutSuccess', (data) => {
+            document.getElementById('turnStatus').textContent += ' - Successfully went down!';
+        });
+
+        function updateUI(state) {
+            const playersDiv = document.getElementById('players');
+            playersDiv.innerHTML = state.players.map(p => 
+                `<div class="player">${p.name}: ${p.cardCount} cards ${p.hasGoneDown ? '(Down)' : ''}</div>`
+            ).join('');
+
+            document.getElementById('currentRound').textContent = state.currentRound + 1;
+            document.getElementById('turnCount').textContent = state.turnCount;
+            document.getElementById('roundGoal').textContent = 
+                `Goal: ${state.roundConditions.sets} Set${state.roundConditions.sets !== 1 ? 's' : ''}, ${state.roundConditions.runs} Run${state.roundConditions.runs !== 1 ? 's' : ''}`;
+            document.getElementById('discardPile').textContent = 
+                state.discardPile[state.discardPile.length - 1] || '';
+
+            const handDiv = document.getElementById('hand');
+            handDiv.innerHTML = 'Your hand: ';
+            state.yourHand.forEach((card, i) => {
+                const cardEl = document.createElement('span');
+                cardEl.className = 'card';
+                if (card.includes('♥') || card.includes('♦')) cardEl.classList.add('red');
+                else if (card.includes('♠') || card.includes('♣')) cardEl.classList.add('black');
+                else if (card.includes('JOKER')) cardEl.classList.add('joker');
+                cardEl.innerHTML = `${card} <input type="checkbox" data-index="${i}">`;
+                cardEl.draggable = true;
+                cardEl.dataset.index = i;
+                handDiv.appendChild(cardEl);
+            });
+
+            setupDragAndDrop(state.yourHand);
+
+            const playerMeldsDiv = document.getElementById('playerMelds');
+            playerMeldsDiv.innerHTML = 'Permanent Melds:';
+            const layoffPlayerSelect = document.createElement('select');
+            layoffPlayerSelect.id = 'layoffPlayer';
+            layoffPlayerSelect.innerHTML = '<option value="">Select Player</option>';
+            const layoffMeldSelect = document.createElement('select');
+            layoffMeldSelect.id = 'layoffMeld';
+            layoffMeldSelect.innerHTML = '<option value="">Select Meld</option>';
+
+            state.players.forEach(p => {
+                if (p.hasGoneDown && p.melds.length > 0) {
+                    const meldDiv = document.createElement('div');
+                    meldDiv.className = 'player-melds';
+                    meldDiv.innerHTML = `${p.name}:<br>` + 
+                        p.melds.map((meld, i) => `<div>Meld ${i}: ${meld.join(', ')}</div>`).join('');
+                    playerMeldsDiv.appendChild(meldDiv);
+                    layoffPlayerSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                    if (layoffPlayerSelect.value === p.id) {
+                        layoffMeldSelect.innerHTML = '<option value="">Select Meld</option>' + 
+                            p.melds.map((_, i) => `<option value="${i}">Meld ${i}</option>`).join('');
+                    }
+                }
+            });
+            layoffPlayerSelect.onchange = () => {
+                const selectedId = layoffPlayerSelect.value;
+                const player = state.players.find(p => p.id === selectedId);
+                layoffMeldSelect.innerHTML = '<option value="">Select Meld</option>' + 
+                    (player ? player.melds.map((_, i) => `<option value="${i}">Meld ${i}</option>`).join('') : '');
+            };
+            playerMeldsDiv.appendChild(layoffPlayerSelect);
+            playerMeldsDiv.appendChild(layoffMeldSelect);
+
+            const turnStatus = document.getElementById('turnStatus');
+            const passButton = document.getElementById('passButton');
+            const drawDiscardButton = document.getElementById('drawDiscardButton');
+            const drawDeckButton = document.getElementById('drawDeckButton');
+            const discardButton = document.getElementById('discardButton');
+            const buyButton = document.getElementById('buyButton');
+            const goOutButton = document.getElementById('goOutButton');
+            const layoffButton = document.getElementById('layoffButton');
+
+            if (state.isYourTurn) {
+                turnStatus.classList.add('your-turn');
+                turnStatus.textContent = `Your turn! ${state.yourHand.length} cards (Buys: ${state.buysThisRound}/3)`;
+                if (!state.hasChosenDiscard) {
+                    turnStatus.textContent += ' - Choose Pass or Take Discard first.';
+                    passButton.classList.remove('disabled');
+                    drawDiscardButton.classList.toggle('disabled', !state.discardPile.length);
+                    drawDeckButton.classList.add('disabled');
+                    discardButton.classList.add('disabled');
+                    goOutButton.classList.add('disabled');
+                    layoffButton.classList.add('disabled');
+                    buyButton.classList.add('disabled');
+                } else {
+                    passButton.classList.add('disabled');
+                    drawDiscardButton.classList.add('disabled');
+                    drawDeckButton.classList.toggle('disabled', state.hasDrawn);
+                    discardButton.classList.toggle('disabled', !state.hasDrawn);
+                    goOutButton.classList.toggle('disabled', !state.hasDrawn || state.players.find(p => p.id === playerId).hasGoneDown);
+                    layoffButton.classList.toggle('disabled', !state.hasDrawn || !state.players.find(p => p.id === playerId).hasGoneDown);
+                    buyButton.classList.add('disabled');
+                }
+            } else {
+                turnStatus.classList.remove('your-turn');
+                turnStatus.textContent = `Waiting for ${state.players.find(p => p.id === state.currentPlayer)?.name || 'someone'}...`;
+                passButton.classList.add('disabled');
+                drawDiscardButton.classList.add('disabled');
+                drawDeckButton.classList.add('disabled');
+                discardButton.classList.add('disabled');
+                goOutButton.classList.add('disabled');
+                layoffButton.classList.add('disabled');
+                buyButton.classList.toggle('disabled', !state.canBuy);
+            }
+        }
+
+        const rankOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+        function validateSet(cards) {
+            if (cards.length < 3) return false;
+            const ranks = cards.map(card => card.includes('JOKER') ? 'JOKER' : card.slice(0, -1));
+            const nonJokers = ranks.filter(r => r !== 'JOKER');
+            const uniqueNonJokers = new Set(nonJokers);
+            return (uniqueNonJokers.size === 1 && nonJokers.length + ranks.length - nonJokers.length === cards.length) || 
+                   (uniqueNonJokers.size === 0 && ranks.every(r => r === 'JOKER'));
+        }
+
+        function validateRun(cards) {
+            if (cards.length < 4) return false;
+            const sortedCards = cards.map(card => ({
+                rank: card.includes('JOKER') ? 'JOKER' : card.slice(0, -1),
+                suit: card.includes('JOKER') ? null : card.slice(-1)
+            })).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+
+            let suit = sortedCards.find(c => c.suit)?.suit;
+            let jokers = sortedCards.filter(c => c.rank === 'JOKER').length;
+            let expectedRank = 0;
+
+            for (let card of sortedCards) {
+                if (card.rank === 'JOKER') {
+                    jokers--;
+                    expectedRank++;
+                } else {
+                    if (card.suit !== suit || rankOrder.indexOf(card.rank) !== expectedRank) return false;
+                    expectedRank++;
+                }
+            }
+            return true;
+        }
+
+        function setupDragAndDrop(hand) {
+            const handDiv = document.getElementById('hand');
+            const cards = handDiv.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    card.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', card.dataset.index);
+                });
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                });
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIndex = parseInt(card.dataset.index);
+                    const newHand = [...hand];
+                    const [movedCard] = newHand.splice(fromIndex, 1);
+                    newHand.splice(toIndex, 0, movedCard);
+                    socket.emit('updateHandOrder', gameId, newHand);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
