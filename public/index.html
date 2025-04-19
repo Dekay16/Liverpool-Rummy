@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liverpool Rummy</title>
     <style>
         body {
@@ -94,6 +95,54 @@
             color: #2c2f33;
             margin-bottom: 12px;
         }
+        #dropdownmenu {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #2f3136;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+            display: none;
+        }
+        #dropdownmenu.show { display: block; }
+        #toggleMenu {
+            background: #f1c40f;
+            color: #2c2f33;
+            margin-bottom: 12px;
+        }
+        #drawDiscardButton, #drawDeckButton, #buyButton {
+            padding: 10px 20px; 
+            margin: 6px; 
+            background: #33b249; 
+            color: #ffffff; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background 0.2s;
+        }
+        #passButton {
+            padding: 10px 20px; 
+            margin: 6px; 
+            background: #ffbd03; 
+            color: black; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background 0.2s;
+        }
+        #discardButton {
+            padding: 10px 20px; 
+            margin: 6px; 
+            background: #ED0800; 
+            color: #ffffff; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background 0.2s;
+        }
         select {
             padding: 8px;
             margin: 6px;
@@ -137,73 +186,77 @@
 </head>
 <body>
     <div id="game">
-        <button id="toggleInstructions" onclick="toggleInstructions()">Show Instructions</button>
-        <div id="instructions">
-            <h2>How to Play Liverpool Rummy</h2>
-            <p>Welcome to Liverpool Rummy! The goal is to have the lowest score after 7 rounds by getting rid of all your cards.</p>
-            <h3>Starting the Game</h3>
-            <ul>
-                <li>Enter a Game ID, your Name, and pick a starting round (defaults to 1), then click "Join Game". Share the Game ID with friends to play together.</li>
-                <li>Game starts with 2+ players. Each gets 10 cards, and one card is in the discard pile.</li>
-            </ul>
-            <h3>Gameplay</h3>
-            <p>Each round has a goal (e.g., "2 Sets"). Check "Round" for the current goal.</p>
-            <ul>
-                <li><strong>Turn Actions:</strong>
-                    <ul>
-                        <li><em>First Step:</em> Click "Pass Discard" (others can buy) or "Take Discard" (take it yourself).</li>
-                        <li><em>Draw:</em> After choosing, click "Draw from Deck" if you passed.</li>
-                        <li><em>Buy Discard:</em> When offered, click "Buy Discard" (costs 2 cards).</li>
-                    </ul>
-                </li>
-                <li><strong>Going Down:</strong>
-                    <ul>
-                        <li>Select cards with checkboxes, click "Go Down". Sets (3+ same rank) and runs (4+ sequential, same suit) are auto-detected.</li>
-                        <li>Must match the round’s exact goal (e.g., 2 sets).</li>
-                    </ul>
-                </li>
-                <li><strong>Laying Off:</strong> (After Going Down)
-                    <ul>
-                        <li>Select cards, choose player and meld, click "Layoff".</li>
-                    </ul>
-                </li>
-                <li><strong>Discard:</strong> Select one card, click "Discard Selected" to end turn.</li>
-                <li><strong>Going Out:</strong> After going down, discard last card to end round.</li>
-            </ul>
-            <h3>Winning</h3>
-            <ul>
-                <li>First to go out ends the round. Others score hand cards (Jokers=20, Aces=15, Face=10, Others=5).</li>
-                <li>Lowest score after 7 rounds wins!</li>
-            </ul>
-        </div>
+        <button id="toggleMenu" onclick="dropdownToggle()">Show Menu</button>
+        <div id="dropdownmenu">
+            <button id="toggleInstructions" onclick="toggleInstructions()">Show Instructions</button>
+            <div id="instructions">
+                <h2>How to Play Liverpool Rummy</h2>
+                <p>Welcome to Liverpool Rummy! The goal is to have the lowest score after 7 rounds by getting rid of all your cards.</p>
+                <h3>Starting the Game</h3>
+                <ul>
+                    <li>Enter a Game ID, your Name, and pick a starting round (defaults to 1), then click "Join Game". Share the Game ID with friends to play together.</li>
+                    <li>Game starts with 2+ players. Each gets 10 cards, and one card is in the discard pile.</li>
+                </ul>
+                <h3>Gameplay</h3>
+                <p>Each round has a goal (e.g., "2 Sets"). Check "Round" for the current goal.</p>
+                <ul>
+                    <li><strong>Turn Actions:</strong>
+                        <ul>
+                            <li><em>First Step:</em> Click "Pass Discard" (others can buy) or "Take Discard" (take it yourself).</li>
+                            <li><em>Draw:</em> After choosing, click "Draw from Deck" if you passed.</li>
+                            <li><em>Buy Discard:</em> When offered, click "Buy Discard" (costs 2 cards).</li>
+                        </ul>
+                    </li>
+                    <li><strong>Going Down:</strong>
+                        <ul>
+                            <li>Select cards with checkboxes, click "Go Down". Sets (3+ same rank) and runs (4+ sequential, same suit) are auto-detected.</li>
+                            <li>Must match the round’s exact goal (e.g., 2 sets).</li>
+                        </ul>
+                    </li>
+                    <li><strong>Laying Off:</strong> (After Going Down)
+                        <ul>
+                            <li>Select cards, choose player and meld, click "Layoff".</li>
+                        </ul>
+                    </li>
+                    <li><strong>Discard:</strong> Select one card, click "Discard Selected" to end turn.</li>
+                    <li><strong>Going Out:</strong> After going down, discard last card to end round.</li>
+                </ul>
+                <h3>Winning</h3>
+                <ul>
+                    <li>First to go out ends the round. Others score hand cards (Jokers=20, Aces=15, Face=10, Others=5).</li>
+                    <li>Lowest score after 7 rounds wins!</li>
+                </ul>
+            </div>
 
-        <input id="gameId" placeholder="Game ID">
-        <input id="playerName" placeholder="Your Name">
-        <select id="startingRound">
-            <option value="0">Round 1 (2 Sets)</option>
-            <option value="1">Round 2 (1 Set, 1 Run)</option>
-            <option value="2">Round 3 (2 Runs)</option>
-            <option value="3">Round 4 (3 Sets)</option>
-            <option value="4">Round 5 (2 Sets, 1 Run)</option>
-            <option value="5">Round 6 (1 Set, 2 Runs)</option>
-            <option value="6">Round 7 (3 Runs)</option>
-        </select>
-        <button onclick="joinGame()">Join Game</button>
-        
+            <input id="gameId" placeholder="Game ID">
+            <input id="playerName" placeholder="Your Name">
+            <select id="startingRound">
+                <option value="0">Round 1 (2 Sets)</option>
+                <option value="1">Round 2 (1 Set, 1 Run)</option>
+                <option value="2">Round 3 (2 Runs)</option>
+                <option value="3">Round 4 (3 Sets)</option>
+                <option value="4">Round 5 (2 Sets, 1 Run)</option>
+                <option value="5">Round 6 (1 Set, 2 Runs)</option>
+                <option value="6">Round 7 (3 Runs)</option>
+            </select>
+            <button onclick="joinGame()">Join Game</button>
+        </div>
         <div id="players"></div>
         <div id="round">Round: <span id="currentRound"></span> | Turn: <span id="turnCount"></span> | Goal: <span id="roundGoal"></span></div>
         <div id="discard">Discard: <span id="discardPile"></span></div>
         <div id="hand">Your hand: </div>
         
-        <button id="passButton" onclick="passDiscard()">Pass Discard</button>
-        <button id="drawDiscardButton" onclick="drawDiscard()">Take Discard</button>
-        <button id="drawDeckButton" onclick="drawCard()">Draw from Deck</button>
-        <button id="discardButton" onclick="discardSelected()">Discard Selected</button>
-        <button id="buyButton" onclick="buyDiscard()">Buy Discard</button>
-        <button id="goOutButton" onclick="goOut()">Go Down</button>
-        <button id="layoffButton" onclick="layoff()">Layoff</button>
         <div id="turnStatus"></div>
         <div id="buyStatus"></div>
+        <button id="passButton" onclick="passDiscard()">Pass Discard</button>
+        <button id="drawDiscardButton" onclick="drawDiscard()">Take Discard</button>
+        <button id="buyButton" onclick="buyDiscard()">Buy Discard</button>
+        <span style="margin:20px; width: 1px; height: 20px; background-color: #ccc;"></span>
+        <button id="drawDeckButton" onclick="drawCard()">Draw from Deck</button>
+        <button id="discardButton" onclick="discardSelected()">Discard Selected</button>
+        <span style="margin:20px; width: 1px; height: 20px; background-color: #ccc;"></span>
+        <button id="goOutButton" onclick="goOut()">Go Down</button>
+        <button id="layoffButton" onclick="layoff()">Layoff</button>
         <div id="playerMelds"></div>
         <div id="leaderboard"></div>
     </div>
@@ -220,6 +273,13 @@
             instructions.classList.toggle('show');
             document.getElementById('toggleInstructions').textContent = 
                 instructions.classList.contains('show') ? 'Hide Instructions' : 'Show Instructions';
+        }
+
+        function dropdownToggle() {
+            const menu = document.getElementById('dropdownmenu');
+            menu.classList.toggle('show');
+            document.getElementById('toggleMenu').textContent = 
+                menu.classList.contains('show') ? 'Hide Menu' : 'Show Menu';
         }
 
         function joinGame() {
@@ -461,7 +521,7 @@
             document.getElementById('currentRound').textContent = state.currentRound + 1;
             document.getElementById('turnCount').textContent = state.turnCount;
             document.getElementById('roundGoal').textContent = 
-                `Goal: ${state.roundConditions.sets} Set${state.roundConditions.sets !== 1 ? 's' : ''}, ${state.roundConditions.runs} Run${state.roundConditions.runs !== 1 ? 's' : ''}`;
+                ` ${state.roundConditions.sets} Set${state.roundConditions.sets !== 1 ? 's' : ''}, ${state.roundConditions.runs} Run${state.roundConditions.runs !== 1 ? 's' : ''}`;
             document.getElementById('discardPile').textContent = 
                 state.discardPile[state.discardPile.length - 1] || '';
 
